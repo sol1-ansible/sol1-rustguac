@@ -1,0 +1,69 @@
+# rustguac configuration — managed by Ansible
+# https://github.com/sol1/rustguac/blob/main/docs/configuration.md
+
+listen_addr = "{{ rustguac_listen_addr }}"
+guacd_addr = "{{ rustguac_guacd_addr }}"
+recording_path = "{{ rustguac_recording_path }}"
+static_path = "{{ rustguac_prefix }}/static"
+db_path = "{{ rustguac_prefix }}/data/rustguac.db"
+session_max_duration_secs = {{ rustguac_session_max_duration_secs }}
+
+{% if rustguac_trusted_proxies | length > 0 %}
+trusted_proxies = {{ rustguac_trusted_proxies | to_json }}
+{% endif %}
+
+[tls]
+cert_path = "{{ rustguac_tls_cert }}"
+key_path = "{{ rustguac_tls_key }}"
+guacd_cert_path = "{{ rustguac_tls_cert }}"
+
+{% if rustguac_allowed_ssh_cidrs | length > 0 or rustguac_allowed_rdp_cidrs | length > 0 or rustguac_allowed_vnc_cidrs | length > 0 %}
+[network]
+{% if rustguac_allowed_ssh_cidrs | length > 0 %}
+allowed_ssh_cidrs = {{ rustguac_allowed_ssh_cidrs | to_json }}
+{% endif %}
+{% if rustguac_allowed_rdp_cidrs | length > 0 %}
+allowed_rdp_cidrs = {{ rustguac_allowed_rdp_cidrs | to_json }}
+{% endif %}
+{% if rustguac_allowed_vnc_cidrs | length > 0 %}
+allowed_vnc_cidrs = {{ rustguac_allowed_vnc_cidrs | to_json }}
+{% endif %}
+{% endif %}
+
+{% if rustguac_oidc_enabled %}
+[oidc]
+issuer_url = "{{ rustguac_oidc_issuer_url }}"
+client_id = "{{ rustguac_oidc_client_id }}"
+redirect_uri = "{{ rustguac_oidc_redirect_uri }}"
+groups_claim = "{{ rustguac_oidc_groups_claim }}"
+session_ttl_secs = {{ rustguac_oidc_session_ttl_secs }}
+
+{% if rustguac_group_role_mappings | length > 0 %}
+[oidc.group_role_mappings]
+{% for group, role in rustguac_group_role_mappings.items() %}
+"{{ group }}" = "{{ role }}"
+{% endfor %}
+{% endif %}
+{% endif %}
+
+{% if rustguac_vault_enabled %}
+[vault]
+addr = "{{ rustguac_vault_addr }}"
+mount = "{{ rustguac_vault_mount }}"
+base_path = "{{ rustguac_vault_base_path }}"
+role_id = "{{ rustguac_vault_role_id }}"
+{% endif %}
+
+{% if rustguac_drive_enabled %}
+[drive]
+enabled = true
+drive_path = "{{ rustguac_drive_path }}"
+drive_name = "{{ rustguac_drive_name }}"
+{% endif %}
+
+{% if rustguac_recording_rotation_enabled %}
+[recording_rotation]
+enabled = true
+max_disk_percent = {{ rustguac_recording_max_disk_percent }}
+interval_secs = 300
+{% endif %}

@@ -1,0 +1,20 @@
+---
+galaxy_info:
+  author: Sol1
+  description: Install and configure rustguac remote access gateway with optional HAProxy and Vault
+  license: Apache-2.0
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Debian
+      versions:
+        - trixie
+    - name: Ubuntu
+      versions:
+        - noble
+  galaxy_tags:
+    - guacamole
+    - rdp
+    - ssh
+    - vnc
+    - remote-access
+dependencies: []

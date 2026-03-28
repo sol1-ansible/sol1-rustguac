@@ -1,0 +1,10 @@
+---
+- name: restart rustguac
+  ansible.builtin.systemd:
+    name: rustguac
+    state: restarted
+
+- name: restart haproxy
+  ansible.builtin.systemd:
+    name: haproxy
+    state: restarted

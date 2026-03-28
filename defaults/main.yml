@@ -1,0 +1,73 @@
+---
+# rustguac version to install
+rustguac_version: latest  # "latest" or specific version like "1.0.0"
+
+# Install method: "deb" (from GitHub releases) or "docker"
+rustguac_install_method: deb
+
+# Base install directory
+rustguac_prefix: /opt/rustguac
+
+# Listen address (loopback when behind HAProxy)
+rustguac_listen_addr: "127.0.0.1:8089"
+
+# guacd address
+rustguac_guacd_addr: "localhost:4822"
+
+# TLS (self-signed generated automatically if paths don't exist)
+rustguac_tls_cert: "{{ rustguac_prefix }}/tls/cert.pem"
+rustguac_tls_key: "{{ rustguac_prefix }}/tls/key.pem"
+
+# OIDC configuration (optional)
+rustguac_oidc_enabled: false
+rustguac_oidc_issuer_url: ""
+rustguac_oidc_client_id: ""
+rustguac_oidc_client_secret: ""
+rustguac_oidc_redirect_uri: ""
+rustguac_oidc_groups_claim: groups
+rustguac_oidc_session_ttl_secs: 28800
+
+# OIDC group-to-role mappings
+rustguac_group_role_mappings: {}
+# Example:
+# rustguac_group_role_mappings:
+#   RemoteConsoleAdmins: admin
+#   RemoteConsoleUsers: operator
+
+# Vault address book (optional)
+rustguac_vault_enabled: false
+rustguac_vault_addr: ""
+rustguac_vault_mount: secret
+rustguac_vault_base_path: rustguac
+rustguac_vault_role_id: ""
+rustguac_vault_secret_id: ""
+
+# Network allowlists (CIDR, prevents SSRF)
+rustguac_allowed_ssh_cidrs: []
+rustguac_allowed_rdp_cidrs: []
+rustguac_allowed_vnc_cidrs: []
+
+# Trusted reverse proxies
+rustguac_trusted_proxies: []
+# Example: ["127.0.0.1/32"]
+
+# Drive / file transfer
+rustguac_drive_enabled: false
+rustguac_drive_path: "{{ rustguac_prefix }}/drives"
+rustguac_drive_name: Shared Drive
+
+# Session recording
+rustguac_recording_path: "{{ rustguac_prefix }}/recordings"
+rustguac_recording_rotation_enabled: true
+rustguac_recording_max_disk_percent: 80
+
+# Session limits
+rustguac_session_max_duration_secs: 28800  # 8 hours
+
+# Create an initial admin API key (set to a name, or empty to skip)
+rustguac_admin_name: ""
+
+# HAProxy integration
+rustguac_haproxy_enabled: false
+rustguac_haproxy_cert: /etc/ssl/private/rustguac.pem
+rustguac_haproxy_domain: ""

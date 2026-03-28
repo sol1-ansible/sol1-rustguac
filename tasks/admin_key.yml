@@ -1,0 +1,23 @@
+---
+- name: Check if admin key already exists
+  ansible.builtin.command: >
+    {{ rustguac_prefix }}/bin/rustguac
+    --config {{ rustguac_prefix }}/config.toml
+    list-admins
+  register: admin_list
+  changed_when: false
+  failed_when: false
+
+- name: Create admin API key
+  ansible.builtin.command: >
+    {{ rustguac_prefix }}/bin/rustguac
+    --config {{ rustguac_prefix }}/config.toml
+    add-admin --name {{ rustguac_admin_name }}
+  register: admin_key_output
+  when: rustguac_admin_name not in admin_list.stdout
+  changed_when: true
+
+- name: Display admin API key
+  ansible.builtin.debug:
+    msg: "{{ admin_key_output.stdout }}"
+  when: admin_key_output is changed

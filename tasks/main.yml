@@ -1,0 +1,24 @@
+---
+- name: Install rustguac from .deb package
+  ansible.builtin.include_tasks: install_deb.yml
+  when: rustguac_install_method == "deb"
+
+- name: Deploy configuration
+  ansible.builtin.include_tasks: configure.yml
+
+- name: Deploy secrets
+  ansible.builtin.include_tasks: secrets.yml
+
+- name: Create admin API key
+  ansible.builtin.include_tasks: admin_key.yml
+  when: rustguac_admin_name | length > 0
+
+- name: Enable and start rustguac
+  ansible.builtin.systemd:
+    name: rustguac
+    enabled: true
+    state: started
+
+- name: Configure HAProxy
+  ansible.builtin.include_tasks: haproxy.yml
+  when: rustguac_haproxy_enabled

@@ -1,0 +1,31 @@
+---
+- name: Determine package URL
+  ansible.builtin.set_fact:
+    rustguac_deb_url: >-
+      {{ 'https://github.com/sol1/rustguac/releases/latest/download/rustguac_amd64.deb'
+         if rustguac_version == 'latest'
+         else 'https://github.com/sol1/rustguac/releases/download/v' + rustguac_version + '/rustguac_' + rustguac_version + '_amd64.deb' }}
+  when: ansible_architecture == "x86_64"
+
+- name: Determine package URL (arm64)
+  ansible.builtin.set_fact:
+    rustguac_deb_url: >-
+      {{ 'https://github.com/sol1/rustguac/releases/latest/download/rustguac_arm64.deb'
+         if rustguac_version == 'latest'
+         else 'https://github.com/sol1/rustguac/releases/download/v' + rustguac_version + '/rustguac_' + rustguac_version + '_arm64.deb' }}
+  when: ansible_architecture == "aarch64"
+
+- name: Download rustguac .deb
+  ansible.builtin.get_url:
+    url: "{{ rustguac_deb_url }}"
+    dest: /tmp/rustguac.deb
+    mode: "0644"
+
+- name: Install rustguac .deb
+  ansible.builtin.apt:
+    deb: /tmp/rustguac.deb
+
+- name: Remove downloaded .deb
+  ansible.builtin.file:
+    path: /tmp/rustguac.deb
+    state: absent
