@@ -1,4 +1,8 @@
 ---
+- name: Install and bootstrap local Vault
+  ansible.builtin.include_tasks: vault.yml
+  when: rustguac_vault_install and rustguac_vault_addr | length == 0
+
 - name: Install rustguac from .deb package
   ansible.builtin.include_tasks: install_deb.yml
   when: rustguac_install_method == "deb"

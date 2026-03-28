@@ -1,0 +1,189 @@
+---
+- name: Install GPG for repo signing
+  ansible.builtin.apt:
+    name: gpg
+    state: present
+
+- name: Add HashiCorp GPG key
+  ansible.builtin.get_url:
+    url: https://apt.releases.hashicorp.com/gpg
+    dest: /usr/share/keyrings/hashicorp-archive-keyring.asc
+    mode: "0644"
+
+- name: Add HashiCorp apt repository
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/hashicorp.list
+    content: >
+      deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.asc]
+      https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main
+    mode: "0644"
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Install Vault
+  ansible.builtin.apt:
+    name: vault
+    state: present
+
+- name: Deploy minimal Vault config for rustguac
+  ansible.builtin.template:
+    src: vault.hcl.j2
+    dest: /etc/vault.d/vault.hcl
+    owner: vault
+    group: vault
+    mode: "0640"
+  notify: restart vault
+
+- name: Enable and start Vault
+  ansible.builtin.systemd:
+    name: vault
+    enabled: true
+    state: started
+
+- name: Wait for Vault to be ready
+  ansible.builtin.uri:
+    url: "{{ rustguac_vault_local_addr }}/v1/sys/health"
+    method: GET
+    status_code: [200, 429, 501, 503]
+    validate_certs: false
+  register: vault_health
+  retries: 10
+  delay: 2
+  until: vault_health.status in [200, 501]
+
+- name: Check if Vault is initialized
+  ansible.builtin.uri:
+    url: "{{ rustguac_vault_local_addr }}/v1/sys/init"
+    method: GET
+    validate_certs: false
+  register: vault_init_status
+
+- name: Initialize Vault
+  when: not vault_init_status.json.initialized
+  block:
+    - name: Initialize Vault with 1 key share
+      ansible.builtin.uri:
+        url: "{{ rustguac_vault_local_addr }}/v1/sys/init"
+        method: PUT
+        body_format: json
+        body:
+          secret_shares: 1
+          secret_threshold: 1
+        validate_certs: false
+      register: vault_init
+
+    - name: Save Vault unseal key and root token
+      ansible.builtin.copy:
+        dest: "{{ rustguac_prefix }}/vault-init.json"
+        content: "{{ vault_init.json | to_nice_json }}"
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: Display Vault init credentials
+      ansible.builtin.debug:
+        msg: |
+          Vault initialized. Root token and unseal key saved to {{ rustguac_prefix }}/vault-init.json
+          IMPORTANT: Back up this file securely and delete it from the server.
+
+    - name: Unseal Vault
+      ansible.builtin.uri:
+        url: "{{ rustguac_vault_local_addr }}/v1/sys/unseal"
+        method: PUT
+        body_format: json
+        body:
+          key: "{{ vault_init.json.keys[0] }}"
+        validate_certs: false
+
+    - name: Enable KV v2 secrets engine
+      ansible.builtin.uri:
+        url: "{{ rustguac_vault_local_addr }}/v1/sys/mounts/{{ rustguac_vault_mount }}"
+        method: POST
+        headers:
+          X-Vault-Token: "{{ vault_init.json.root_token }}"
+        body_format: json
+        body:
+          type: kv
+          options:
+            version: "2"
+        validate_certs: false
+        status_code: [200, 204]
+
+    - name: Create AppRole auth policy for rustguac
+      ansible.builtin.uri:
+        url: "{{ rustguac_vault_local_addr }}/v1/sys/policies/acl/rustguac"
+        method: PUT
+        headers:
+          X-Vault-Token: "{{ vault_init.json.root_token }}"
+        body_format: json
+        body:
+          policy: |
+            path "{{ rustguac_vault_mount }}/data/{{ rustguac_vault_base_path }}/*" {
+              capabilities = ["create", "read", "update", "delete", "list"]
+            }
+            path "{{ rustguac_vault_mount }}/metadata/{{ rustguac_vault_base_path }}/*" {
+              capabilities = ["list", "read", "delete"]
+            }
+        validate_certs: false
+        status_code: [200, 204]
+
+    - name: Enable AppRole auth method
+      ansible.builtin.uri:
+        url: "{{ rustguac_vault_local_addr }}/v1/sys/auth/approle"
+        method: POST
+        headers:
+          X-Vault-Token: "{{ vault_init.json.root_token }}"
+        body_format: json
+        body:
+          type: approle
+        validate_certs: false
+        status_code: [200, 204]
+
+    - name: Create AppRole for rustguac
+      ansible.builtin.uri:
+        url: "{{ rustguac_vault_local_addr }}/v1/auth/approle/role/rustguac"
+        method: POST
+        headers:
+          X-Vault-Token: "{{ vault_init.json.root_token }}"
+        body_format: json
+        body:
+          token_policies: ["rustguac"]
+          token_ttl: 1h
+          token_max_ttl: 4h
+        validate_certs: false
+        status_code: [200, 204]
+
+    - name: Get AppRole role ID
+      ansible.builtin.uri:
+        url: "{{ rustguac_vault_local_addr }}/v1/auth/approle/role/rustguac/role-id"
+        method: GET
+        headers:
+          X-Vault-Token: "{{ vault_init.json.root_token }}"
+        validate_certs: false
+      register: approle_role_id
+
+    - name: Generate AppRole secret ID
+      ansible.builtin.uri:
+        url: "{{ rustguac_vault_local_addr }}/v1/auth/approle/role/rustguac/secret-id"
+        method: POST
+        headers:
+          X-Vault-Token: "{{ vault_init.json.root_token }}"
+        validate_certs: false
+      register: approle_secret_id
+
+    - name: Set Vault facts for rustguac config
+      ansible.builtin.set_fact:
+        rustguac_vault_role_id: "{{ approle_role_id.json.data.role_id }}"
+        rustguac_vault_secret_id: "{{ approle_secret_id.json.data.secret_id }}"
+        rustguac_vault_addr: "{{ rustguac_vault_local_addr }}"
+        rustguac_vault_enabled: true
+
+    - name: Display AppRole credentials
+      ansible.builtin.debug:
+        msg: |
+          Vault AppRole created for rustguac:
+            Role ID:    {{ approle_role_id.json.data.role_id }}
+            Secret ID:  {{ approle_secret_id.json.data.secret_id }}
+          These will be written to rustguac config automatically.

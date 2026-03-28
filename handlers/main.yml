@@ -8,3 +8,8 @@
   ansible.builtin.systemd:
     name: haproxy
     state: restarted
+
+- name: restart vault
+  ansible.builtin.systemd:
+    name: vault
+    state: restarted
