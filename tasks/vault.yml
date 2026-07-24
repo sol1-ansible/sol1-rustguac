@@ -35,6 +35,9 @@
     hashivault_tls_disable: true
     hashivault_api_address: "{{ rustguac_vault_listen_addr.split(':')[0] }}"
     hashivault_api_port: "{{ rustguac_vault_listen_addr.split(':')[-1] }}"
+    # Force the local Vault endpoint — overrides any inventory-wide hashivault_url
+    # so the CLI targets this host, not a shared Vault.
+    hashivault_url: "{{ rustguac_vault_local_addr }}"
     hashivault_provision_token: "{{ _rustguac_vault_provision_token }}"
     # KV v2 mount that backs the rustguac address book
     key_vault_name:
