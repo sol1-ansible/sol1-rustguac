@@ -1,31 +1,24 @@
 ---
-- name: Determine package URL
-  ansible.builtin.set_fact:
-    rustguac_deb_url: >-
-      {{ 'https://github.com/sol1/rustguac/releases/latest/download/rustguac_amd64.deb'
-         if rustguac_version == 'latest'
-         else 'https://github.com/sol1/rustguac/releases/download/v' + rustguac_version + '/rustguac_' + rustguac_version + '_amd64.deb' }}
-  when: ansible_architecture == "x86_64"
+# Install rustguac from the Sol1 apt repository (packages.sol1.net). The repo itself is
+# configured by the shared sol1-packages_repo role.
+- name: Ensure the Sol1 packages repository is configured
+  ansible.builtin.include_role:
+    name: sol1-packages_repo
+  vars:
+    sol1_packages_repo_debian_release_codename: "{{ ansible_distribution_release }}"
 
-- name: Determine package URL (arm64)
-  ansible.builtin.set_fact:
-    rustguac_deb_url: >-
-      {{ 'https://github.com/sol1/rustguac/releases/latest/download/rustguac_arm64.deb'
-         if rustguac_version == 'latest'
-         else 'https://github.com/sol1/rustguac/releases/download/v' + rustguac_version + '/rustguac_' + rustguac_version + '_arm64.deb' }}
-  when: ansible_architecture == "aarch64"
-
-- name: Download rustguac .deb
-  ansible.builtin.get_url:
-    url: "{{ rustguac_deb_url }}"
-    dest: /tmp/rustguac.deb
-    mode: "0644"
-
-- name: Install rustguac .deb
+- name: Install rustguac (latest) from the Sol1 packages repository
   ansible.builtin.apt:
-    deb: /tmp/rustguac.deb
+    name: rustguac
+    state: latest
+    update_cache: true
+  when: rustguac_version == 'latest'
+  notify: restart rustguac
 
-- name: Remove downloaded .deb
-  ansible.builtin.file:
-    path: /tmp/rustguac.deb
-    state: absent
+- name: Install rustguac (pinned) from the Sol1 packages repository
+  ansible.builtin.apt:
+    name: "rustguac={{ rustguac_version }}"
+    state: present
+    update_cache: true
+  when: rustguac_version != 'latest'
+  notify: restart rustguac

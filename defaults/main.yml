@@ -1,8 +1,8 @@
 ---
 # rustguac version to install
-rustguac_version: latest  # "latest" or specific version like "1.0.0"
+rustguac_version: latest  # "latest", or a specific apt package version like "1.0.0"
 
-# Install method: "deb" (from GitHub releases) or "docker"
+# Install method: "deb" (apt install from the Sol1 packages repo) or "docker"
 rustguac_install_method: deb
 
 # Base install directory
