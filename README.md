@@ -15,6 +15,12 @@ Ansible role to install and configure [rustguac](https://github.com/sol1/rustgua
 
 - Debian 13 (Trixie) or Ubuntu 24.04+
 - Root access
+- The [`sol1-haproxy`](https://github.com/sol1/sol1-haproxy) role on the roles path
+  when `rustguac_haproxy_enabled` is set (rustguac contributes its frontend/backend to
+  it via `include_role`).
+- The [`sol1-hashivault`](https://github.com/sol1/sol1-hashivault) role on the roles
+  path when `rustguac_vault_install` is set (rustguac installs/bootstraps a local Vault
+  through it and consumes the generated AppRole credentials). See `requirements.yml`.
 
 ## Usage
 

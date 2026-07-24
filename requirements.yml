@@ -1,0 +1,15 @@
+---
+# sol1-rustguac consumes these Sol1 roles conditionally (via include_role):
+#   - sol1-haproxy      when rustguac_haproxy_enabled
+#   - sol1-hashivault   when rustguac_vault_install (and no external rustguac_vault_addr)
+#
+# They live alongside this role in the sol1 ansible-roles collection. Make sure both are
+# present on the roles path (e.g. clone them as siblings, or install from their sources
+# below). Adjust the src/version to match your environment.
+roles:
+  - name: sol1-haproxy
+    src: https://github.com/sol1/sol1-haproxy
+    scm: git
+  - name: sol1-hashivault
+    src: https://github.com/sol1/sol1-hashivault
+    scm: git

@@ -17,4 +17,8 @@ galaxy_info:
     - ssh
     - vnc
     - remote-access
+# sol1-haproxy and sol1-hashivault are consumed conditionally via include_role
+# (only when rustguac_haproxy_enabled / rustguac_vault_install are set), so they are
+# intentionally NOT listed as hard dependencies here. Ensure both roles are available
+# on the roles path — see requirements.yml.
 dependencies: []

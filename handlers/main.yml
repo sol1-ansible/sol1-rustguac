@@ -1,15 +1,7 @@
 ---
+# HAProxy and Vault service management is owned by the sol1-haproxy / sol1-hashivault
+# roles respectively; rustguac only manages its own service here.
 - name: restart rustguac
   ansible.builtin.systemd:
     name: rustguac
-    state: restarted
-
-- name: restart haproxy
-  ansible.builtin.systemd:
-    name: haproxy
-    state: restarted
-
-- name: restart vault
-  ansible.builtin.systemd:
-    name: vault
     state: restarted
