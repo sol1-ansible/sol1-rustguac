@@ -1,10 +1,10 @@
 ---
-# Install + bootstrap a local single-node Vault via the shared sol1-hashivault role,
+# Install + bootstrap a local single-node Vault via the shared sol1.hashivault role,
 # and provision the KV mount, ACL policy and AppRole that rustguac needs. rustguac then
 # consumes the generated role_id/secret_id.
-- name: Install and bootstrap Vault via sol1-hashivault
+- name: Install and bootstrap Vault via sol1.hashivault
   ansible.builtin.include_role:
-    name: sol1-hashivault
+    name: sol1.hashivault
   vars:
     hashivault_storage_type: file
     hashivault_tls_disable: true

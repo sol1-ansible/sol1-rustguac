@@ -1,10 +1,10 @@
 ---
-# Front rustguac with HAProxy via the shared sol1-haproxy role. rustguac contributes a
-# single TLS-terminating frontend + backend; sol1-haproxy owns /etc/haproxy/haproxy.cfg.
+# Front rustguac with HAProxy via the shared sol1.haproxy role. rustguac contributes a
+# single TLS-terminating frontend + backend; sol1.haproxy owns /etc/haproxy/haproxy.cfg.
 # The combined PEM at rustguac_haproxy_cert is expected to already exist on the host.
-- name: Configure HAProxy via sol1-haproxy
+- name: Configure HAProxy via sol1.haproxy
   ansible.builtin.include_role:
-    name: sol1-haproxy
+    name: sol1.haproxy
   vars:
     haproxy_global_ssl_default_bind_options: "no-sslv3 no-tlsv10 no-tlsv11"
     haproxy_frontend:

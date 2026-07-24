@@ -1,9 +1,9 @@
 ---
 # Install rustguac from the Sol1 apt repository (packages.sol1.net). The repo itself is
-# configured by the shared sol1-packages_repo role.
+# configured by the shared sol1.packages_repo role.
 - name: Ensure the Sol1 packages repository is configured
   ansible.builtin.include_role:
-    name: sol1-packages_repo
+    name: sol1.packages_repo
   vars:
     sol1_packages_repo_debian_release_codename: "{{ ansible_distribution_release }}"
 

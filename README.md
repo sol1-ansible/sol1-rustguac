@@ -4,7 +4,7 @@ Ansible role to install and configure [rustguac](https://github.com/sol1/rustgua
 
 ## What it does
 
-1. Installs rustguac from the Sol1 apt repo (`packages.sol1.net`, via `sol1-packages_repo`)
+1. Installs rustguac from the Sol1 apt repo (`packages.sol1.net`, via `sol1.packages_repo`)
 2. Deploys `config.toml` with all settings templated
 3. Deploys secrets (`env` file for Vault/OIDC)
 4. Optionally creates an admin API key for initial setup
@@ -15,13 +15,13 @@ Ansible role to install and configure [rustguac](https://github.com/sol1/rustgua
 
 - Debian 13 (Trixie) or Ubuntu 24.04+
 - Root access
-- The [`sol1-packages_repo`](https://github.com/sol1-ansible/sol1-packages_repo) role on
+- The [`sol1.packages_repo`](https://github.com/sol1-ansible/sol1.packages_repo) role on
   the roles path (deb install method) — rustguac is installed from the
   `packages.sol1.net` apt repo that this role configures.
-- The [`sol1-haproxy`](https://github.com/sol1/sol1-haproxy) role on the roles path
+- The [`sol1.haproxy`](https://github.com/sol1/sol1.haproxy) role on the roles path
   when `rustguac_haproxy_enabled` is set (rustguac contributes its frontend/backend to
   it via `include_role`).
-- The [`sol1-hashivault`](https://github.com/sol1/sol1-hashivault) role on the roles
+- The [`sol1.hashivault`](https://github.com/sol1/sol1.hashivault) role on the roles
   path when `rustguac_vault_install` is set (rustguac installs/bootstraps a local Vault
   through it and consumes the generated AppRole credentials). See `requirements.yml`.
 
