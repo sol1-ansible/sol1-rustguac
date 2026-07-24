@@ -46,6 +46,10 @@ rustguac_vault_secret_id: ""
 # Sets up KV v2, AppRole, and policy — ready for rustguac address book.
 # Only runs if rustguac_vault_addr is empty (no external Vault).
 rustguac_vault_install: false
+# Privileged Vault token used to provision rustguac's approle/policy/KV when Vault is
+# already initialized (a fresh install does not need this). If left empty, a legacy
+# {{ rustguac_prefix }}/vault-init.json (from the pre-refactor role) is used if present.
+rustguac_vault_provision_token: ""
 rustguac_vault_listen_addr: "127.0.0.1:8200"
 rustguac_vault_local_addr: "http://127.0.0.1:8200"
 rustguac_vault_tls: false

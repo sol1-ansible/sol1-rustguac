@@ -2,6 +2,31 @@
 # Install + bootstrap a local single-node Vault via the shared sol1.hashivault role,
 # and provision the KV mount, ACL policy and AppRole that rustguac needs. rustguac then
 # consumes the generated role_id/secret_id.
+
+# When Vault is already initialized (e.g. a prior run, or the pre-refactor rustguac role
+# which stashed creds in {{ rustguac_prefix }}/vault-init.json), hashivault has no root
+# token of its own and cannot provision. Recover one so provisioning still works.
+- name: Look for a legacy rustguac vault-init.json
+  ansible.builtin.stat:
+    path: "{{ rustguac_prefix }}/vault-init.json"
+  register: _rustguac_vault_init
+
+- name: Load legacy Vault init material
+  ansible.builtin.slurp:
+    src: "{{ rustguac_prefix }}/vault-init.json"
+  register: _rustguac_vault_init_content
+  when: _rustguac_vault_init.stat.exists
+  no_log: true
+
+- name: Determine a Vault provisioning token (explicit override or legacy init file)
+  ansible.builtin.set_fact:
+    _rustguac_vault_provision_token: >-
+      {{ rustguac_vault_provision_token
+         if rustguac_vault_provision_token | length > 0
+         else ((_rustguac_vault_init_content.content | b64decode | from_json).root_token
+               if _rustguac_vault_init.stat.exists else '') }}
+  no_log: true
+
 - name: Install and bootstrap Vault via sol1.hashivault
   ansible.builtin.include_role:
     name: sol1.hashivault
@@ -10,6 +35,7 @@
     hashivault_tls_disable: true
     hashivault_api_address: "{{ rustguac_vault_listen_addr.split(':')[0] }}"
     hashivault_api_port: "{{ rustguac_vault_listen_addr.split(':')[-1] }}"
+    hashivault_provision_token: "{{ _rustguac_vault_provision_token }}"
     # KV v2 mount that backs the rustguac address book
     key_vault_name:
       - "{{ rustguac_vault_mount }}"
@@ -30,6 +56,17 @@
         token_policies: [rustguac]
         token_ttl: 1h
         token_max_ttl: 4h
+
+- name: Fail if Vault provisioning did not produce rustguac credentials
+  ansible.builtin.fail:
+    msg: >-
+      Vault is already initialized but no privileged token was available to provision
+      rustguac's AppRole, so no credentials were generated. Set
+      'rustguac_vault_provision_token' to a Vault token that can manage the approle auth
+      method and the '{{ rustguac_vault_mount }}' KV mount, or re-initialize Vault.
+  when: >-
+    hashivault_approle_credentials is not defined
+    or 'rustguac' not in (hashivault_approle_credentials | default({}))
 
 - name: Set rustguac Vault connection facts
   ansible.builtin.set_fact:
